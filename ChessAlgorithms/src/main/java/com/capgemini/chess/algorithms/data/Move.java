@@ -9,6 +9,7 @@ import com.capgemini.chess.algorithms.data.enums.Piece;
  * @author Michal Bejm
  *
  */
+
 public class Move {
 
 	private Coordinate from;
