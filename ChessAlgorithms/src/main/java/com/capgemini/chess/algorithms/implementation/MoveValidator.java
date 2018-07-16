@@ -8,8 +8,10 @@ import com.capgemini.chess.algorithms.data.enums.Color;
 import com.capgemini.chess.algorithms.data.enums.MoveType;
 import com.capgemini.chess.algorithms.data.enums.Piece;
 import com.capgemini.chess.algorithms.data.generated.Board;
+import com.capgemini.chess.algorithms.implementation.exceptions.InvalidMoveException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedCoordinatesException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedPathException;
+import com.capgemini.chess.algorithms.implementation.exceptions.OutOfBoardException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OutOfPieceRangeException;
 
 public class MoveValidator {
@@ -17,20 +19,29 @@ public class MoveValidator {
 	private Board board;
 	private Coordinate present;
 	private Coordinate next;
-	private int pX = present.getX();
-	private int pY = present.getY();
-	private int nX = present.getX();
-	private int nY = present.getY();
+	private int pX;
+	private int pY;
+	private int nX;
+	private int nY;
 	private Piece piece;
 	private Move move;
 
 	public Move validate(Board board, Coordinate present, Coordinate next)
-			throws OutOfPieceRangeException, OccupiedCoordinatesException, OccupiedPathException {
+			throws InvalidMoveException {
 		this.board = board;
+		this.present = present;
+		this.next = next;
+		move = new Move();
+		isCoordinateOnBoard(present);
+		isCoordinateOnBoard(next);
 		piece = board.getPieceAt(present);
 		move.setFrom(present);
 		move.setTo(next);
 		move.setMovedPiece(piece);
+		pX = present.getX();
+		pY = present.getY();
+		nX = next.getX();
+		nY = next.getY();	
 		switch (piece.getType()) {
 		case PAWN:
 			validatePawn();
@@ -113,38 +124,14 @@ public class MoveValidator {
 	}
 
 	private boolean validateRook() throws OccupiedPathException, OccupiedCoordinatesException {
-		if ((abs(nX - pX) > 0 && nY == pY || (abs(nY - pY) > 0) && nX == pX)) {
-			if (nY == pY) {
-				if (pX < nX) {
-					for (int i = pX; i < nX; i++) {
-						if (isOccupied(new Coordinate(i, nY))) {
-							throw new OccupiedPathException();
-						}
-					}
-					if (isOccupied(next)) {
-						if (isOccupiedByEnemy(next)) {
-							move.setType(MoveType.CAPTURE);
-							return true;
-						}
-						move.setType(MoveType.ATTACK);
-						return true;
-					}
-					throw new OccupiedCoordinatesException();
-				} else {
-					for (int i = pX; i > nX; i--) {
-						if (isOccupied(new Coordinate(i, nY))) {
-							throw new OccupiedPathException();
-						}
-					}
-				}
-				if (isOccupied(next)) {
-					if (isOccupiedByEnemy(next)) {
-						return true;
-					}
-					move.setType(MoveType.ATTACK);
-					return true;
-				}
-				throw new OccupiedCoordinatesException();
+		int test = abs(nX - pX);
+		if (abs(nX - pX) > 0 && nY == pY || abs(nY - pY) > 0 && nX == pX) {
+			if(isPathOccupiedInStraightLine()){
+				throw new OccupiedPathException();
+			}
+			if (!isOccupied(next)) {
+				move.setType(MoveType.ATTACK);
+				return true;
 			}
 		}
 		return false;
@@ -177,10 +164,23 @@ public class MoveValidator {
 		return false;
 	}
 
-	private boolean validateQueen() throws OccupiedCoordinatesException {
-		if (abs(pX - nX) == abs(pY - nY) || nX - pX == 0 || nY - pY == 0) {
+	private boolean validateQueen() throws OccupiedCoordinatesException, OccupiedPathException {
+		if (abs(pX - nX) == abs(pY - nY)) {
+			if(isPathOccupiedInDiagonalLine()){
+				throw new OccupiedPathException();
+			}
 			if (!isOccupied(next)) {
 				move.setType(MoveType.ATTACK);
+				return true;
+			}
+		}
+		if(nX - pX == 0 || nY - pY == 0) {
+			if(isPathOccupiedInStraightLine()){
+				throw new OccupiedPathException();
+			}
+			if (!isOccupied(next)) {
+				move.setType(MoveType.ATTACK);
+				return true;
 			}
 		}
 		return false;
@@ -204,8 +204,15 @@ public class MoveValidator {
 		}
 		return true;
 	}
+	
+	private boolean isCoordinateOnBoard(Coordinate c) throws InvalidMoveException{
+		if(c.getX()>7||c.getX()<0||c.getY()>7||c.getY()<0){
+			throw new OutOfBoardException();
+		}
+		return true;
+	}
 
-	private boolean isPathOccupiedInStraigthLine() {
+	private boolean isPathOccupiedInStraightLine() {
 		if (pX == nX) {
 			if (nY > pY) {
 				for (int i = pY + 1; i < nY; i++) {
