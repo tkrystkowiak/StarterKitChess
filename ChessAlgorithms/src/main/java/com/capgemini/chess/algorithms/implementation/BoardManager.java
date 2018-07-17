@@ -78,7 +78,7 @@ public class BoardManager {
 
 		Color nextMoveColor = calculateNextMoveColor();
 
-		boolean isKingInCheck = isKingInCheck(nextMoveColor);
+		boolean isKingInCheck = isKingInCheck(nextMoveColor,board.getPieces());
 		boolean isAnyMoveValid = isAnyMoveValid(nextMoveColor);
 
 		BoardState boardState;
@@ -231,14 +231,35 @@ public class BoardManager {
 		this.board.setPieceAt(null, lastMove.getTo());
 	}
 
-	private Move validateMove(Coordinate from, Coordinate to) throws InvalidMoveException, KingInCheckException {
+	private Move validateMove(Coordinate from, Coordinate to) throws InvalidMoveException{
 		MoveValidator mv = new MoveValidator();
-		return mv.validate(board, from, to);
+		Move move = mv.validate(board, from, to);
+		Piece[][] tempBoard = board.getPieces();
+		tempBoard[from.getX()][from.getY()] = null;
+		tempBoard[to.getX()][to.getY()] = board.getPieceAt(to);
+		if(isKingInCheck(calculateNextMoveColor(),tempBoard)){
+			throw new KingInCheckException();
+		}
+		return move;
 	}
 
-	private boolean isKingInCheck(Color kingColor) {
-
-		// TODO please add implementation here
+	private boolean isKingInCheck(Color kingColor,Piece[][] pieces) {
+		Coordinate kingCoo = findKing(kingColor);
+		MoveValidator mv = new MoveValidator();
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				Coordinate c = new Coordinate(x, y);
+				Piece piece = pieces[x][y];
+				if (piece != null) {
+					if (piece.getColor() != kingColor) {
+						try {
+							mv.validate(board,c,kingCoo);
+							return true;
+						} catch (InvalidMoveException e) {}
+					}
+				}
+			}
+		}
 		return false;
 	}
 
@@ -249,11 +270,34 @@ public class BoardManager {
 		return false;
 	}
 
+	private Coordinate findKing(Color kingColor) {
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				Coordinate c = new Coordinate(x, y);
+				Piece piece = board.getPieceAt(c);
+				if (piece != null) {
+					if (piece.getType() == PieceType.KING && piece.getColor() == kingColor) {
+						return c;
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
 	private Color calculateNextMoveColor() {
 		if (this.board.getMoveHistory().size() % 2 == 0) {
 			return Color.WHITE;
 		} else {
 			return Color.BLACK;
+		}
+	}
+	
+	private Color calculatePreviousMoveColor() {
+		if (this.board.getMoveHistory().size() % 2 == 0) {
+			return Color.BLACK;
+		} else {
+			return Color.WHITE;
 		}
 	}
 

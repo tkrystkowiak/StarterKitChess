@@ -14,6 +14,7 @@ import com.capgemini.chess.algorithms.data.generated.Board;
 import com.capgemini.chess.algorithms.implementation.exceptions.EmptyFieldException;
 import com.capgemini.chess.algorithms.implementation.exceptions.InvalidMoveException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedCoordinatesException;
+import com.capgemini.chess.algorithms.implementation.exceptions.OutOfBoardException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OutOfPieceRangeException;
 
 public class MoveValidator {
@@ -34,8 +35,12 @@ public class MoveValidator {
 		this.present = present;
 		this.next = next;
 		move = new Move();
-		isCoordinateOnBoard(present);
-		isCoordinateOnBoard(next);
+		if(!isCoordinateOnBoard(present)){
+			throw new OutOfBoardException();
+		}
+		if(!isCoordinateOnBoard(next)){
+			throw new OutOfBoardException();
+		}
 		piece = board.getPieceAt(present);
 		if (piece == null) {
 			throw new EmptyFieldException();
@@ -433,74 +438,6 @@ public class MoveValidator {
 			Coordinate c = (Coordinate) itr.next();
 			if (c.getX() == nX && c.getY() == nY) {
 				return true;
-			}
-		}
-		return false;
-	}
-
-	private boolean isPathOccupiedInStraightLine() {
-		if (pX == nX) {
-			if (nY > pY) {
-				for (int i = pY + 1; i < nY; i++) {
-					if (board.getPieceAt(new Coordinate(pX, i)) != null) {
-						return true;
-					}
-				}
-			}
-			for (int i = pY - 1; i > nY; i--) {
-				if (board.getPieceAt(new Coordinate(pX, i)) != null) {
-					return true;
-				}
-			}
-		}
-		if (pY == nY) {
-			if (nX > pX) {
-				for (int i = pX + 1; i < nX; i++) {
-					if (board.getPieceAt(new Coordinate(i, pY)) != null) {
-						return true;
-					}
-				}
-			}
-			for (int i = pX - 1; i > nX; i--) {
-				if (board.getPieceAt(new Coordinate(i, pY)) != null) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	private boolean isPathOccupiedInDiagonalLine() {
-		// Right-up quarter
-		if (pX - nX < 0 && pY - nY < 0) {
-			for (int i = 1; pX + i < nX && pY + i < nY; i++) {
-				if (board.getPieceAt(new Coordinate(pX + i, pY + i)) != null) {
-					return true;
-				}
-			}
-		}
-		// Right-down quarter
-		if (pX - nX < 0 && pY - nY > 0) {
-			for (int i = 1; pX - i > nX && pY + i < nY; i++) {
-				if (board.getPieceAt(new Coordinate(pX + i, pY - i)) != null) {
-					return true;
-				}
-			}
-		}
-		// Left-up quarter
-		if (pX - nX > 0 && pY - nY < 0) {
-			for (int i = 1; pX - i < nX && pY + i < nY; i++) {
-				if (board.getPieceAt(new Coordinate(pX - i, pY + i)) != null) {
-					return true;
-				}
-			}
-		}
-		// Left-down quarter
-		if (pX - nX > 0 && pY - nY > 0) {
-			for (int i = 1; pX - i < nX && pY - i < nY; i++) {
-				if (board.getPieceAt(new Coordinate(pX - i, pY - i)) != null) {
-					return true;
-				}
 			}
 		}
 		return false;

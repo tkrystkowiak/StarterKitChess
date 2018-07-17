@@ -1,5 +1,6 @@
 package com.capgemini.chess.algorithms.data.generated;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
