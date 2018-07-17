@@ -2,6 +2,9 @@ package com.capgemini.chess.algorithms.implementation;
 
 import static java.lang.Math.*;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import com.capgemini.chess.algorithms.data.Coordinate;
 import com.capgemini.chess.algorithms.data.Move;
 import com.capgemini.chess.algorithms.data.enums.Color;
@@ -11,8 +14,6 @@ import com.capgemini.chess.algorithms.data.generated.Board;
 import com.capgemini.chess.algorithms.implementation.exceptions.EmptyFieldException;
 import com.capgemini.chess.algorithms.implementation.exceptions.InvalidMoveException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedCoordinatesException;
-import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedPathException;
-import com.capgemini.chess.algorithms.implementation.exceptions.OutOfBoardException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OutOfPieceRangeException;
 
 public class MoveValidator {
@@ -26,9 +27,9 @@ public class MoveValidator {
 	private int nY;
 	private Piece piece;
 	private Move move;
+	private ArrayList<Coordinate> possibleMoves;
 
-	public Move validate(Board board, Coordinate present, Coordinate next)
-			throws InvalidMoveException {
+	public Move validate(Board board, Coordinate present, Coordinate next) throws InvalidMoveException {
 		this.board = board;
 		this.present = present;
 		this.next = next;
@@ -36,7 +37,7 @@ public class MoveValidator {
 		isCoordinateOnBoard(present);
 		isCoordinateOnBoard(next);
 		piece = board.getPieceAt(present);
-		if(piece==null){
+		if (piece == null) {
 			throw new EmptyFieldException();
 		}
 		move.setFrom(present);
@@ -45,7 +46,7 @@ public class MoveValidator {
 		pX = present.getX();
 		pY = present.getY();
 		nX = next.getX();
-		nY = next.getY();	
+		nY = next.getY();
 		switch (piece.getType()) {
 		case PAWN:
 			validatePawn();
@@ -70,130 +71,332 @@ public class MoveValidator {
 	}
 
 	private boolean validatePawn() throws OutOfPieceRangeException, OccupiedCoordinatesException {
-
+		possibleMoves = new ArrayList<>();
 		boolean isFirstMove = false;
-		
-		if(piece.getColor()==Color.BLACK){
-			if (nY >= pY || abs(nX - pX) > 1 || abs(nY - pY) > 2) {
-				throw new OutOfPieceRangeException();
-			}
-		}
-		if(piece.getColor()==Color.WHITE){
-			if (nY <= pY || abs(nX - pX) > 1 || abs(nY - pY) > 2) {
-				throw new OutOfPieceRangeException();
-			}
-		}
+
 		if (pY == 1 && piece.getColor() == Color.WHITE || pY == 6 && piece.getColor() == Color.BLACK) {
 			isFirstMove = true;
 		}
-		if (board.getPieceAt(new Coordinate(pX, pY + 1)) != null) {
+
+		if (piece.getColor() == Color.BLACK) {
+			Coordinate a = new Coordinate(pX, pY - 1);
+			if (board.getPieceAt(a) == null) {
+				possibleMoves.add(a);
+				Coordinate b = new Coordinate(pX, pY - 2);
+				if (isFirstMove && board.getPieceAt(b) == null) {
+					possibleMoves.add(b);
+				}
+			}
+			Coordinate c = new Coordinate(pX - 1, pY - 1);
+			if (isOccupiedByEnemy(c)) {
+				possibleMoves.add(c);
+			}
+			Coordinate d = new Coordinate(pX + 1, pY - 1);
+			if (isOccupiedByEnemy(d)) {
+				possibleMoves.add(d);
+			}
+
+		}
+		if (piece.getColor() == Color.WHITE) {
+			Coordinate a = new Coordinate(pX, pY + 1);
+			if (board.getPieceAt(a) == null) {
+				possibleMoves.add(a);
+				Coordinate b = new Coordinate(pX, pY + 2);
+				if (isFirstMove && board.getPieceAt(b) == null) {
+					possibleMoves.add(b);
+				}
+			}
+			Coordinate c = new Coordinate(pX - 1, pY + 1);
+			if (isOccupiedByEnemy(c)) {
+				possibleMoves.add(c);
+			}
+			Coordinate d = new Coordinate(pX + 1, pY + 1);
+			if (isOccupiedByEnemy(d)) {
+				possibleMoves.add(d);
+			}
+		}
+		if (!isInRange(possibleMoves)) {
+			throw new OutOfPieceRangeException();
+		}
+		if (isOccupiedByOwn(next)||isOccupiedByEnemy(next)&&pX==nX) {
 			throw new OccupiedCoordinatesException();
 		}
-		if (abs(nY - pY) == 2) {
-			if (!isFirstMove) {
-				throw new OutOfPieceRangeException();
-			}
-			if (Math.abs(nX - pX) > 0) {
-				throw new OutOfPieceRangeException();
-			}
-			if (board.getPieceAt(next) != null) {
-				// Tu jest problem bo moze byc pionek przeciwnika
-				throw new OccupiedCoordinatesException();
-			}
-		}
-		if (abs(nX - pX) == 1) {
-
-			if (!isOccupied(next)) {
-				throw new OutOfPieceRangeException();
-			}
-			if (board.getPieceAt(next).getColor() != board.getPieceAt(present).getColor()) {
-				throw new OutOfPieceRangeException();
-			}
+		if (isOccupiedByEnemy(next)) {
 			move.setType(MoveType.CAPTURE);
 			return true;
 		}
-		if (isOccupied(next)) {
+		move.setType(MoveType.ATTACK);
+		return true;
+
+	}
+
+	private boolean validateKnight() throws OutOfPieceRangeException, OccupiedCoordinatesException {
+		possibleMoves = new ArrayList<>();
+		for (int x = pX - 2; x < pX + 3; x = x + 4) {
+			for (int y = pY - 1; y < pY + 2; y = y + 2) {
+				Coordinate c = new Coordinate(x, y);
+				if (isCoordinateOnBoard(c)) {
+					possibleMoves.add(c);
+				}
+			}
+		}
+		for (int y = pY - 2; y < pY + 3; y = y + 4) {
+			for (int x = pX - 1; x < pX + 2; x = x + 2) {
+				Coordinate c = new Coordinate(x, y);
+				if (isCoordinateOnBoard(c)) {
+					possibleMoves.add(c);
+				}
+			}
+		}
+		if (!isInRange(possibleMoves)) {
+			throw new OutOfPieceRangeException();
+		}
+		if (isOccupiedByOwn(next)) {
 			throw new OccupiedCoordinatesException();
+		}
+		if (isOccupiedByEnemy(next)) {
+			move.setType(MoveType.CAPTURE);
+			return true;
+		}
+		move.setType(MoveType.ATTACK);
+		return true;
+
+	}
+
+	private boolean validateRook() throws InvalidMoveException {
+		possibleMoves = new ArrayList<>();
+		for (int i = pY + 1; i < 8; i++) {
+			Coordinate c = new Coordinate(pX, i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pY - 1; i > -1; i--) {
+			Coordinate c = new Coordinate(pX, i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pX + 1; i < 8; i++) {
+			Coordinate c = new Coordinate(i, pY);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pX - 1; i > -1; i--) {
+			Coordinate c = new Coordinate(i, pY);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+
+		if (!isInRange(possibleMoves)) {
+			throw new OutOfPieceRangeException();
+		}
+		if (isOccupiedByOwn(next)) {
+			throw new OccupiedCoordinatesException();
+		}
+		if (isOccupiedByEnemy(next)) {
+			move.setType(MoveType.CAPTURE);
+			return true;
+		}
+		move.setType(MoveType.ATTACK);
+		return true;
+
+	}
+
+	private boolean validateKing() throws OccupiedCoordinatesException, OutOfPieceRangeException {
+		possibleMoves = new ArrayList<>();
+		for (int x = pX - 1; x < pX + 2; x++) {
+			for (int y = pY - 1; y < pY + 2; y++) {
+				Coordinate c = new Coordinate(x, y);
+				if (isCoordinateOnBoard(c) && (x != pX || y != pY)) {
+					possibleMoves.add(c);
+				}
+			}
+		}
+		if (!isInRange(possibleMoves)) {
+			throw new OutOfPieceRangeException();
+		}
+		if (isOccupiedByOwn(next)) {
+			throw new OccupiedCoordinatesException();
+		}
+		if (isOccupiedByEnemy(next)) {
+			move.setType(MoveType.CAPTURE);
+			return true;
+		}
+		move.setType(MoveType.ATTACK);
+		return true;
+
+	}
+
+	private boolean validateBishop() throws InvalidMoveException {
+		possibleMoves = new ArrayList<>();
+		for (int i = 1; pX + i < 8 && pY + i < 8; i++) {
+			Coordinate c = new Coordinate(pX + i, pY + i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = 1; pX - i > -1 && pY + i < 8; i++) {
+			Coordinate c = new Coordinate(pX - i, pY + i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = 1; pX - i > -1 && pY - i > -1; i++) {
+			Coordinate c = new Coordinate(pX - i, pY - i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = 1; pX + i < 8 && pY - i > -1; i++) {
+			Coordinate c = new Coordinate(pX + i, pY - i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+
+		if (!isInRange(possibleMoves)) {
+			throw new OutOfPieceRangeException();
+		}
+		if (isOccupiedByOwn(next)) {
+			throw new OccupiedCoordinatesException();
+		}
+		if (isOccupiedByEnemy(next)) {
+			move.setType(MoveType.CAPTURE);
+			return true;
+		}
+		move.setType(MoveType.ATTACK);
+		return true;
+
+	}
+
+	private boolean validateQueen() throws InvalidMoveException {
+		possibleMoves = new ArrayList<>();
+		for (int i = 1; pX + i < 8 && pY + i < 8; i++) {
+			Coordinate c = new Coordinate(pX + i, pY + i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = 1; pX - i > -1 && pY + i < 8; i++) {
+			Coordinate c = new Coordinate(pX - i, pY + i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = 1; pX - i > -1 && pY - i > -1; i++) {
+			Coordinate c = new Coordinate(pX - i, pY - i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = 1; pX + i < 8 && pY - i > -1; i++) {
+			Coordinate c = new Coordinate(pX + i, pY - i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pY + 1; i < 8; i++) {
+			Coordinate c = new Coordinate(pX, i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pY - 1; i > -1; i--) {
+			Coordinate c = new Coordinate(pX, i);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pX + 1; i < 8; i++) {
+			Coordinate c = new Coordinate(i, pY);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+		for (int i = pX - 1; i > -1; i--) {
+			Coordinate c = new Coordinate(i, pY);
+			if (board.getPieceAt(c) == null) {
+				possibleMoves.add(c);
+			} else {
+				possibleMoves.add(c);
+				break;
+			}
+		}
+
+		if (!isInRange(possibleMoves)) {
+			throw new OutOfPieceRangeException();
+		}
+		if (isOccupiedByOwn(next)) {
+			throw new OccupiedCoordinatesException();
+		}
+		if (isOccupiedByEnemy(next)) {
+			move.setType(MoveType.CAPTURE);
+			return true;
 		}
 		move.setType(MoveType.ATTACK);
 		return true;
 	}
 
-	private boolean validateKnight() throws OutOfPieceRangeException, OccupiedCoordinatesException {
-		if (abs(nX - pX) == 2 && abs(nY - pY) == 1 || abs(nX - pX) == 1 && abs(nY - pY) == 2) {
-			if (isOccupied(next)) {
-				if (isOccupiedByEnemy(next)) {
-					move.setType(MoveType.CAPTURE);
-					return true;
-				}
-				throw new OccupiedCoordinatesException();
-			}
-			move.setType(MoveType.ATTACK);
+	private boolean isOccupiedByOwn(Coordinate c) {
+		Piece p = board.getPieceAt(c);
+		if (p == null) {
+			return false;
+		}
+		if (p.getColor() == piece.getColor()) {
 			return true;
 		}
-		throw new OutOfPieceRangeException();
-	}
-
-	private boolean validateRook() throws OccupiedPathException, OccupiedCoordinatesException {
-		int test = abs(nX - pX);
-		if (abs(nX - pX) > 0 && nY == pY || abs(nY - pY) > 0 && nX == pX) {
-			if(isPathOccupiedInStraightLine()){
-				throw new OccupiedPathException();
-			}
-			if (!isOccupied(next)) {
-				move.setType(MoveType.ATTACK);
-				return true;
-			}
-		}
 		return false;
+
 	}
 
-	private boolean validateKing() throws OccupiedCoordinatesException, OutOfPieceRangeException {
-		if (abs(pX - nX) <= 1 && abs(pY - nY) <= 1) {
-			if (!isOccupied(next)) {
-				move.setType(MoveType.ATTACK);
-				return true;
-			}
-			throw new OccupiedCoordinatesException();
-		}
-		throw new OutOfPieceRangeException();
-	}
-
-	private boolean validateBishop() throws InvalidMoveException {
-		if (abs(pX - nX) == abs(pY - nY)) {
-			if(isPathOccupiedInDiagonalLine()){
-				throw new OccupiedPathException();
-			}
-			if (!isOccupied(next)) {
-				move.setType(MoveType.ATTACK);
-				return true;
-			}
-		}
-		throw new OutOfPieceRangeException();
-	}
-
-	private boolean validateQueen() throws OccupiedCoordinatesException, OccupiedPathException {
-		if (abs(pX - nX) == abs(pY - nY)) {
-			if(isPathOccupiedInDiagonalLine()){
-				throw new OccupiedPathException();
-			}
-			if (!isOccupied(next)) {
-				move.setType(MoveType.ATTACK);
-				return true;
-			}
-		}
-		if(nX - pX == 0 || nY - pY == 0) {
-			if(isPathOccupiedInStraightLine()){
-				throw new OccupiedPathException();
-			}
-			if (!isOccupied(next)) {
-				move.setType(MoveType.ATTACK);
-				return true;
-			}
-		}
-		return false;
-	}
-	
 	private boolean isOccupied(Coordinate c) throws OccupiedCoordinatesException {
 		Piece p = board.getPieceAt(c);
 		if (p == null) {
@@ -208,17 +411,31 @@ public class MoveValidator {
 
 	private boolean isOccupiedByEnemy(Coordinate c) {
 		Piece p = board.getPieceAt(c);
+		if (p == null) {
+			return false;
+		}
 		if (p.getColor() == piece.getColor()) {
 			return false;
 		}
 		return true;
 	}
-	
-	private boolean isCoordinateOnBoard(Coordinate c) throws InvalidMoveException{
-		if(c.getX()>7||c.getX()<0||c.getY()>7||c.getY()<0){
-			throw new OutOfBoardException();
+
+	private boolean isCoordinateOnBoard(Coordinate c) {
+		if (c.getX() > 7 || c.getX() < 0 || c.getY() > 7 || c.getY() < 0) {
+			return false;
 		}
 		return true;
+	}
+
+	private boolean isInRange(ArrayList<Coordinate> moves) {
+		Iterator itr = moves.iterator();
+		while (itr.hasNext()) {
+			Coordinate c = (Coordinate) itr.next();
+			if (c.getX() == nX && c.getY() == nY) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private boolean isPathOccupiedInStraightLine() {
@@ -254,7 +471,7 @@ public class MoveValidator {
 	}
 
 	private boolean isPathOccupiedInDiagonalLine() {
-		//Right-up quarter
+		// Right-up quarter
 		if (pX - nX < 0 && pY - nY < 0) {
 			for (int i = 1; pX + i < nX && pY + i < nY; i++) {
 				if (board.getPieceAt(new Coordinate(pX + i, pY + i)) != null) {
@@ -262,7 +479,7 @@ public class MoveValidator {
 				}
 			}
 		}
-		//Right-down quarter
+		// Right-down quarter
 		if (pX - nX < 0 && pY - nY > 0) {
 			for (int i = 1; pX - i > nX && pY + i < nY; i++) {
 				if (board.getPieceAt(new Coordinate(pX + i, pY - i)) != null) {
@@ -270,7 +487,7 @@ public class MoveValidator {
 				}
 			}
 		}
-		//Left-up quarter
+		// Left-up quarter
 		if (pX - nX > 0 && pY - nY < 0) {
 			for (int i = 1; pX - i < nX && pY + i < nY; i++) {
 				if (board.getPieceAt(new Coordinate(pX - i, pY + i)) != null) {
@@ -278,7 +495,7 @@ public class MoveValidator {
 				}
 			}
 		}
-		//Left-down quarter
+		// Left-down quarter
 		if (pX - nX > 0 && pY - nY > 0) {
 			for (int i = 1; pX - i < nX && pY - i < nY; i++) {
 				if (board.getPieceAt(new Coordinate(pX - i, pY - i)) != null) {
