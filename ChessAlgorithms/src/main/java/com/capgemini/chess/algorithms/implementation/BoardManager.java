@@ -264,9 +264,30 @@ public class BoardManager {
 	}
 
 	private boolean isAnyMoveValid(Color nextMoveColor) {
-
-		// TODO please add implementation here
-
+		Piece[][] pieces = board.getPieces();
+		ValidatorFactory vF = new ValidatorFactory();
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				Coordinate c = new Coordinate(x, y);
+				Piece piece = pieces[x][y];
+				if (piece != null) {
+					if (piece.getColor() == nextMoveColor) {
+							try {
+								Validator validator = vF.getValidator(board,c,c);
+								if(validator.isAnyMovePossible()){
+									List<Coordinate> moves = validator.possibleMoves;
+									tempBoard[from.getX()][from.getY()] = null;
+									tempBoard[to.getX()][to.getY()] = board.getPieceAt(to);
+									if(isKingInCheck(calculateNextMoveColor(),tempBoard)){
+										throw new KingInCheckException();
+									}
+								return true;
+								}
+							} catch (InvalidMoveException e) {}
+					}
+				}
+			}
+		}
 		return false;
 	}
 

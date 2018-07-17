@@ -11,6 +11,7 @@ import com.capgemini.chess.algorithms.data.enums.Color;
 import com.capgemini.chess.algorithms.data.enums.MoveType;
 import com.capgemini.chess.algorithms.data.enums.Piece;
 import com.capgemini.chess.algorithms.data.generated.Board;
+import com.capgemini.chess.algorithms.implementation.exceptions.AnotherPlayerTurnException;
 import com.capgemini.chess.algorithms.implementation.exceptions.EmptyFieldException;
 import com.capgemini.chess.algorithms.implementation.exceptions.InvalidMoveException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedCoordinatesException;
@@ -20,6 +21,7 @@ import com.capgemini.chess.algorithms.implementation.exceptions.OutOfPieceRangeE
 public class MoveValidator {
 
 	private Board board;
+	private Coordinate checked;
 	private Coordinate present;
 	private Coordinate next;
 	private int pX;
@@ -29,7 +31,7 @@ public class MoveValidator {
 	private Piece piece;
 	private Move move;
 	private ArrayList<Coordinate> possibleMoves;
-
+	
 	public Move validate(Board board, Coordinate present, Coordinate next) throws InvalidMoveException {
 		this.board = board;
 		this.present = present;
@@ -44,6 +46,9 @@ public class MoveValidator {
 		piece = board.getPieceAt(present);
 		if (piece == null) {
 			throw new EmptyFieldException();
+		}
+		if(!isThisRightTurn()){
+			throw new AnotherPlayerTurnException();
 		}
 		move.setFrom(present);
 		move.setTo(next);
@@ -441,6 +446,21 @@ public class MoveValidator {
 			}
 		}
 		return false;
+	}
+	
+	private boolean isThisRightTurn(){
+		if(piece.getColor()==actualColor()){
+			return true;
+		}
+		return false;
+	}
+	
+	private Color actualColor(){
+		if (this.board.getMoveHistory().size() % 2 == 0) {
+			return Color.WHITE;
+		} else {
+			return Color.BLACK;
+		}
 	}
 
 }
