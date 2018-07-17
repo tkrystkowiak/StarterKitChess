@@ -72,9 +72,16 @@ public class MoveValidator {
 	private boolean validatePawn() throws OutOfPieceRangeException, OccupiedCoordinatesException {
 
 		boolean isFirstMove = false;
-
-		if (nY <= pY || abs(nX - pX) > 1 || nY - pY > 2) {
-			throw new OutOfPieceRangeException();
+		
+		if(piece.getColor()==Color.BLACK){
+			if (nY >= pY || abs(nX - pX) > 1 || abs(nY - pY) > 2) {
+				throw new OutOfPieceRangeException();
+			}
+		}
+		if(piece.getColor()==Color.WHITE){
+			if (nY <= pY || abs(nX - pX) > 1 || abs(nY - pY) > 2) {
+				throw new OutOfPieceRangeException();
+			}
 		}
 		if (pY == 1 && piece.getColor() == Color.WHITE || pY == 6 && piece.getColor() == Color.BLACK) {
 			isFirstMove = true;
@@ -82,7 +89,7 @@ public class MoveValidator {
 		if (board.getPieceAt(new Coordinate(pX, pY + 1)) != null) {
 			throw new OccupiedCoordinatesException();
 		}
-		if (nY - pY == 2) {
+		if (abs(nY - pY) == 2) {
 			if (!isFirstMove) {
 				throw new OutOfPieceRangeException();
 			}
@@ -94,7 +101,7 @@ public class MoveValidator {
 				throw new OccupiedCoordinatesException();
 			}
 		}
-		if ((nX - pX) == 1) {
+		if (abs(nX - pX) == 1) {
 
 			if (!isOccupied(next)) {
 				throw new OutOfPieceRangeException();
@@ -272,7 +279,7 @@ public class MoveValidator {
 			}
 		}
 		//Left-down quarter
-		if (pX - nX < 0 && pY - nY < 0) {
+		if (pX - nX > 0 && pY - nY > 0) {
 			for (int i = 1; pX - i < nX && pY - i < nY; i++) {
 				if (board.getPieceAt(new Coordinate(pX - i, pY - i)) != null) {
 					return true;
