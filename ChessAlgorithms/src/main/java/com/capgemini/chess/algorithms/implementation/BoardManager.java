@@ -275,17 +275,17 @@ public class BoardManager {
 	}
 
 	private boolean isAnyMoveValid(Color nextMoveColor) {
-		Piece[][] pieces = board.getPieces();
+		Board tempBoard = new Board(board);
 		ValidatorFactory vF = new ValidatorFactory();
 		for (int x = 0; x < 8; x++) {
 			for (int y = 0; y < 8; y++) {
 				Coordinate c = new Coordinate(x, y);
-				Piece piece = pieces[x][y];
+				Piece piece = tempBoard.getPieceAt(c);
 				if (piece != null) {
 					if (piece.getColor() == nextMoveColor) {
 						Validator validator;
 						try {
-							validator = vF.getValidator(board, c, c);
+							validator = vF.getValidator(board, c);
 						} catch (InvalidMoveException e1) {
 							continue;
 						}
