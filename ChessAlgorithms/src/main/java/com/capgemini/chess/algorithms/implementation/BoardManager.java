@@ -241,7 +241,7 @@ public class BoardManager {
 		Validator v = vFactory.getValidator(board, from, to);
 		Move move = v.validate();
 		Board tempBoard = new Board(board);
-		Piece movedPiece = this.board.getPieceAt(move.getFrom());
+		Piece movedPiece = tempBoard.getPieceAt(move.getFrom());
 		tempBoard.setPieceAt(null, move.getFrom());
 		tempBoard.setPieceAt(movedPiece, move.getTo());
 		if (isKingInCheck(movedPiece.getColor(), tempBoard)) {

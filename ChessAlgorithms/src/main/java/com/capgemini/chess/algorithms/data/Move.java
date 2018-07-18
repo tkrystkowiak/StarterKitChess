@@ -10,7 +10,7 @@ import com.capgemini.chess.algorithms.data.enums.Piece;
  *
  */
 
-public class Move {
+public class Move implements Cloneable {
 
 	private Coordinate from;
 	private Coordinate to;
