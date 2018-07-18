@@ -47,9 +47,6 @@ public class MoveValidator {
 		if (piece == null) {
 			throw new EmptyFieldException();
 		}
-		if(!isThisRightTurn()){
-			throw new AnotherPlayerTurnException();
-		}
 		move.setFrom(present);
 		move.setTo(next);
 		move.setMovedPiece(piece);
@@ -447,20 +444,4 @@ public class MoveValidator {
 		}
 		return false;
 	}
-	
-	private boolean isThisRightTurn(){
-		if(piece.getColor()==actualColor()){
-			return true;
-		}
-		return false;
-	}
-	
-	private Color actualColor(){
-		if (this.board.getMoveHistory().size() % 2 == 0) {
-			return Color.WHITE;
-		} else {
-			return Color.BLACK;
-		}
-	}
-
 }

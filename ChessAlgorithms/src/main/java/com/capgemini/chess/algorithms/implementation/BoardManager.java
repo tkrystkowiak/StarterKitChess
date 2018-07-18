@@ -1,6 +1,7 @@
 package com.capgemini.chess.algorithms.implementation;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import com.capgemini.chess.algorithms.data.Coordinate;
@@ -11,8 +12,11 @@ import com.capgemini.chess.algorithms.data.enums.MoveType;
 import com.capgemini.chess.algorithms.data.enums.Piece;
 import com.capgemini.chess.algorithms.data.enums.PieceType;
 import com.capgemini.chess.algorithms.data.generated.Board;
+import com.capgemini.chess.algorithms.implementation.exceptions.AnotherPlayerTurnException;
+import com.capgemini.chess.algorithms.implementation.exceptions.EmptyFieldException;
 import com.capgemini.chess.algorithms.implementation.exceptions.InvalidMoveException;
 import com.capgemini.chess.algorithms.implementation.exceptions.KingInCheckException;
+import com.capgemini.chess.algorithms.implementation.exceptions.OutOfBoardException;
 
 /**
  * Class for managing of basic operations on the Chess Board.
@@ -78,7 +82,7 @@ public class BoardManager {
 
 		Color nextMoveColor = calculateNextMoveColor();
 
-		boolean isKingInCheck = isKingInCheck(nextMoveColor,board.getPieces());
+		boolean isKingInCheck = isKingInCheck(nextMoveColor, board);
 		boolean isAnyMoveValid = isAnyMoveValid(nextMoveColor);
 
 		BoardState boardState;
@@ -231,31 +235,38 @@ public class BoardManager {
 		this.board.setPieceAt(null, lastMove.getTo());
 	}
 
-	private Move validateMove(Coordinate from, Coordinate to) throws InvalidMoveException{
-		MoveValidator mv = new MoveValidator();
-		Move move = mv.validate(board, from, to);
-		Piece[][] tempBoard = board.getPieces();
-		tempBoard[from.getX()][from.getY()] = null;
-		tempBoard[to.getX()][to.getY()] = board.getPieceAt(to);
-		if(isKingInCheck(calculateNextMoveColor(),tempBoard)){
+	private Move validateMove(Coordinate from, Coordinate to) throws InvalidMoveException {
+		initialValidation(from, to);
+		ValidatorFactory vFactory = new ValidatorFactory();
+		Validator v = vFactory.getValidator(board, from, to);
+		Move move = v.validate();
+		Board tempBoard = new Board(board);
+		Piece movedPiece = this.board.getPieceAt(move.getFrom());
+		tempBoard.setPieceAt(null, move.getFrom());
+		tempBoard.setPieceAt(movedPiece, move.getTo());
+		if (isKingInCheck(movedPiece.getColor(), tempBoard)) {
 			throw new KingInCheckException();
 		}
 		return move;
 	}
 
-	private boolean isKingInCheck(Color kingColor,Piece[][] pieces) {
+	private boolean isKingInCheck(Color kingColor, Board tempBoard) {
 		Coordinate kingCoo = findKing(kingColor);
-		MoveValidator mv = new MoveValidator();
+		if (kingCoo == null) {
+			return false;
+		}
+		ValidatorFactory vF = new ValidatorFactory();
 		for (int x = 0; x < 8; x++) {
 			for (int y = 0; y < 8; y++) {
 				Coordinate c = new Coordinate(x, y);
-				Piece piece = pieces[x][y];
+				Piece piece = tempBoard.getPieceAt(c);
 				if (piece != null) {
 					if (piece.getColor() != kingColor) {
 						try {
-							mv.validate(board,c,kingCoo);
+							vF.getValidator(board, c, kingCoo).validate();
 							return true;
-						} catch (InvalidMoveException e) {}
+						} catch (InvalidMoveException e) {
+						}
 					}
 				}
 			}
@@ -272,18 +283,26 @@ public class BoardManager {
 				Piece piece = pieces[x][y];
 				if (piece != null) {
 					if (piece.getColor() == nextMoveColor) {
-							try {
-								Validator validator = vF.getValidator(board,c,c);
-								if(validator.isAnyMovePossible()){
-									List<Coordinate> moves = validator.possibleMoves;
-									tempBoard[from.getX()][from.getY()] = null;
-									tempBoard[to.getX()][to.getY()] = board.getPieceAt(to);
-									if(isKingInCheck(calculateNextMoveColor(),tempBoard)){
-										throw new KingInCheckException();
-									}
-								return true;
+						Validator validator;
+						try {
+							validator = vF.getValidator(board, c, c);
+						} catch (InvalidMoveException e1) {
+							continue;
+						}
+						if (validator.isAnyMovePossible()) {
+							List<Coordinate> moves = validator.getPossibleMoves();
+							Iterator itr = moves.iterator();
+							while (itr.hasNext()) {
+								Coordinate d = (Coordinate) itr.next();
+								try {
+									validateMove(c, d);
+								} catch (InvalidMoveException e) {
+									continue;
 								}
-							} catch (InvalidMoveException e) {}
+								return true;
+
+							}
+						}
 					}
 				}
 			}
@@ -305,20 +324,35 @@ public class BoardManager {
 		}
 		return null;
 	}
-	
+
+	private void initialValidation(Coordinate from, Coordinate to) throws InvalidMoveException {
+		if (!isCoordinateOnBoard(from)) {
+			throw new OutOfBoardException();
+		}
+		if (!isCoordinateOnBoard(to)) {
+			throw new OutOfBoardException();
+		}
+		Piece piece = board.getPieceAt(from);
+		if (piece == null) {
+			throw new EmptyFieldException();
+		}
+		if (piece.getColor() != calculateNextMoveColor()) {
+			throw new AnotherPlayerTurnException();
+		}
+	}
+
+	public boolean isCoordinateOnBoard(Coordinate c) {
+		if (c.getX() > 7 || c.getX() < 0 || c.getY() > 7 || c.getY() < 0) {
+			return false;
+		}
+		return true;
+	}
+
 	private Color calculateNextMoveColor() {
 		if (this.board.getMoveHistory().size() % 2 == 0) {
 			return Color.WHITE;
 		} else {
 			return Color.BLACK;
-		}
-	}
-	
-	private Color calculatePreviousMoveColor() {
-		if (this.board.getMoveHistory().size() % 2 == 0) {
-			return Color.BLACK;
-		} else {
-			return Color.WHITE;
 		}
 	}
 

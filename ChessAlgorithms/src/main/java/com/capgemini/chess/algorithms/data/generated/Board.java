@@ -26,6 +26,13 @@ public class Board {
 	
 	public Board() {
 	}
+	
+	public Board(Board clonedBoard){
+		this.pieces = clonedBoard.getPieces().clone();
+		List<Move> clonedHistory = clonedBoard.getMoveHistory();
+		for (Move m : clonedHistory) moveHistory.add(m);
+		this.state = clonedBoard.getState();
+	}
 
 	public List<Move> getMoveHistory() {
 		return moveHistory;
