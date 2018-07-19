@@ -251,7 +251,7 @@ public class BoardManager {
 	}
 
 	private boolean isKingInCheck(Color kingColor, Board tempBoard) {
-		Coordinate kingCoo = findKing(kingColor);
+		Coordinate kingCoo = findKing(kingColor, tempBoard);
 		if (kingCoo == null) {
 			return false;
 		}
@@ -263,7 +263,7 @@ public class BoardManager {
 				if (piece != null) {
 					if (piece.getColor() != kingColor) {
 						try {
-							vF.getValidator(board, c, kingCoo).validate();
+							vF.getValidator(tempBoard, c, kingCoo).validate();
 							return true;
 						} catch (InvalidMoveException e) {
 						}
@@ -285,7 +285,7 @@ public class BoardManager {
 					if (piece.getColor() == nextMoveColor) {
 						Validator validator;
 						try {
-							validator = vF.getValidator(board, c);
+							validator = vF.getValidator(tempBoard, c);
 						} catch (InvalidMoveException e1) {
 							continue;
 						}
@@ -310,11 +310,11 @@ public class BoardManager {
 		return false;
 	}
 
-	private Coordinate findKing(Color kingColor) {
+	private Coordinate findKing(Color kingColor, Board kingsBoard) {
 		for (int x = 0; x < 8; x++) {
 			for (int y = 0; y < 8; y++) {
 				Coordinate c = new Coordinate(x, y);
-				Piece piece = board.getPieceAt(c);
+				Piece piece = kingsBoard.getPieceAt(c);
 				if (piece != null) {
 					if (piece.getType() == PieceType.KING && piece.getColor() == kingColor) {
 						return c;
