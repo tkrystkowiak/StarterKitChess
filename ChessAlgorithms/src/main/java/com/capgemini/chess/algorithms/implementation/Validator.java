@@ -9,6 +9,7 @@ import com.capgemini.chess.algorithms.data.Move;
 import com.capgemini.chess.algorithms.data.enums.MoveType;
 import com.capgemini.chess.algorithms.data.enums.Piece;
 import com.capgemini.chess.algorithms.data.generated.Board;
+import com.capgemini.chess.algorithms.implementation.exceptions.DestinationNotDefinedException;
 import com.capgemini.chess.algorithms.implementation.exceptions.EmptyFieldException;
 import com.capgemini.chess.algorithms.implementation.exceptions.InvalidMoveException;
 import com.capgemini.chess.algorithms.implementation.exceptions.OccupiedCoordinatesException;
@@ -48,11 +49,13 @@ public abstract class Validator {
 	}
 
 	public Move validate() throws InvalidMoveException {
-		move = new Move();
-
+		if (next == null) {
+			throw new DestinationNotDefinedException();
+		}
 		if (piece == null) {
 			throw new EmptyFieldException();
 		}
+		move = new Move();
 		move.setFrom(present);
 		move.setTo(next);
 		move.setMovedPiece(piece);
@@ -73,11 +76,11 @@ public abstract class Validator {
 
 	public boolean isAnyMovePossible() {
 		checkPossibleMoves();
-		Iterator itr = possibleMoves.iterator();
+		Iterator<Coordinate> itr = possibleMoves.iterator();
 		List<Coordinate> toRemove = new ArrayList<Coordinate>();
 		while (itr.hasNext()) {
-			Coordinate c = (Coordinate) itr.next();
-			if (isOccupiedByOwn(c)) {
+			Coordinate c = itr.next();
+			if (board.isOccupiedByOwn(c, piece)) {
 				toRemove.add(c);
 			}
 		}
@@ -93,10 +96,10 @@ public abstract class Validator {
 		if (!isInRange(possibleMoves)) {
 			throw new OutOfPieceRangeException();
 		}
-		if (isOccupiedByOwn(next)) {
+		if (board.isOccupiedByOwn(next, piece)) {
 			throw new OccupiedCoordinatesException();
 		}
-		if (isOccupiedByEnemy(next)) {
+		if (board.isOccupiedByEnemy(next, piece)) {
 			move.setType(MoveType.CAPTURE);
 			return true;
 		}
@@ -104,48 +107,10 @@ public abstract class Validator {
 		return true;
 	}
 
-	public boolean isOccupiedByOwn(Coordinate c) {
-		Piece p = board.getPieceAt(c);
-		if (p == null) {
-			return false;
-		}
-		if (p.getColor() == piece.getColor()) {
-			return true;
-		}
-		return false;
-
-	}
-
-	public boolean isOccupied(Coordinate c) {
-		Piece p = board.getPieceAt(c);
-		if (p == null) {
-			return false;
-		}
-		return true;
-	}
-
-	public boolean isOccupiedByEnemy(Coordinate c) {
-		Piece p = board.getPieceAt(c);
-		if (p == null) {
-			return false;
-		}
-		if (p.getColor() == piece.getColor()) {
-			return false;
-		}
-		return true;
-	}
-
-	public boolean isCoordinateOnBoard(Coordinate c) {
-		if (c.getX() > 7 || c.getX() < 0 || c.getY() > 7 || c.getY() < 0) {
-			return false;
-		}
-		return true;
-	}
-
 	public boolean isInRange(ArrayList<Coordinate> moves) {
-		Iterator itr = moves.iterator();
+		Iterator<Coordinate> itr = moves.iterator();
 		while (itr.hasNext()) {
-			Coordinate c = (Coordinate) itr.next();
+			Coordinate c = itr.next();
 			if (c.getX() == nX && c.getY() == nY) {
 				return true;
 			}

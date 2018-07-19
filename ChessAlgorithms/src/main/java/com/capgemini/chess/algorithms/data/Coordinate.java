@@ -24,6 +24,13 @@ public class Coordinate {
 		return y;
 	}
 
+	public boolean isOnBoard() {
+		if (getX() > 7 || getX() < 0 || getY() > 7 || getY() < 0) {
+			return false;
+		}
+		return true;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

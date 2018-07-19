@@ -11,7 +11,8 @@ import org.junit.runners.Suite.SuiteClasses;
  *
  */
 @RunWith(Suite.class)
-@SuiteClasses({ BoardManagerTest.class, FullGameTest.class })
+@SuiteClasses({ BoardManagerTest.class, FullGameTest.class, ExceptionsTest.class, ValidatorTest.class,
+		BoardTest.class })
 public class ChessTestSuite {
 
 }

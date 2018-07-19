@@ -31,7 +31,7 @@ public class KingValidator extends Validator {
 		for (int x = pX - 1; x < pX + 2; x++) {
 			for (int y = pY - 1; y < pY + 2; y++) {
 				Coordinate c = new Coordinate(x, y);
-				if (isCoordinateOnBoard(c) && (x != pX || y != pY)) {
+				if (c.isOnBoard() && (x != pX || y != pY)) {
 					possibleMoves.add(c);
 				}
 			}
@@ -44,7 +44,7 @@ public class KingValidator extends Validator {
 					&& !wasPiecedMovedFromField(new Coordinate(0, 0))) {
 				boolean isPathEmpty = true;
 				for (int i = pX - 1; i > 0; i--) {
-					if (isOccupied(new Coordinate(i, pY))) {
+					if (board.isOccupied(new Coordinate(i, pY))) {
 						isPathEmpty = false;
 						break;
 					}
@@ -67,7 +67,7 @@ public class KingValidator extends Validator {
 					&& !wasPiecedMovedFromField(new Coordinate(0, 7))) {
 				boolean isPathEmpty = true;
 				for (int i = pX + 1; i < 7; i++) {
-					if (isOccupied(new Coordinate(i, pY))) {
+					if (board.isOccupied(new Coordinate(i, pY))) {
 						isPathEmpty = false;
 						break;
 					}
@@ -94,7 +94,7 @@ public class KingValidator extends Validator {
 					&& !wasPiecedMovedFromField(new Coordinate(0, 7))) {
 				boolean isPathEmpty = true;
 				for (int i = pX - 1; i > 0; i--) {
-					if (isOccupied(new Coordinate(i, pY))) {
+					if (board.isOccupied(new Coordinate(i, pY))) {
 						isPathEmpty = false;
 						break;
 					}
@@ -117,7 +117,7 @@ public class KingValidator extends Validator {
 					&& !wasPiecedMovedFromField(new Coordinate(7, 7))) {
 				boolean isPathEmpty = true;
 				for (int i = pX + 1; i < 7; i++) {
-					if (isOccupied(new Coordinate(i, pY))) {
+					if (board.isOccupied(new Coordinate(i, pY))) {
 						isPathEmpty = false;
 						break;
 					}
@@ -161,10 +161,10 @@ public class KingValidator extends Validator {
 		if (!isInRange(possibleMoves)) {
 			throw new OutOfPieceRangeException();
 		}
-		if (isOccupiedByOwn(next)) {
+		if (board.isOccupiedByOwn(next, piece)) {
 			throw new OccupiedCoordinatesException();
 		}
-		if (isOccupiedByEnemy(next)) {
+		if (board.isOccupiedByEnemy(next, piece)) {
 			move.setType(MoveType.CAPTURE);
 			return true;
 		}

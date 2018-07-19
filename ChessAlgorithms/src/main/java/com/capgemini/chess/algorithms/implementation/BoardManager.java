@@ -236,7 +236,7 @@ public class BoardManager {
 	}
 
 	private Move validateMove(Coordinate from, Coordinate to) throws InvalidMoveException {
-		initialValidation(from, to);
+		preValidate(from, to);
 		ValidatorFactory vFactory = new ValidatorFactory();
 		Validator v = vFactory.getValidator(board, from, to);
 		Move move = v.validate();
@@ -251,7 +251,7 @@ public class BoardManager {
 	}
 
 	private boolean isKingInCheck(Color kingColor, Board tempBoard) {
-		Coordinate kingCoo = findKing(kingColor, tempBoard);
+		Coordinate kingCoo = tempBoard.findKing(kingColor);
 		if (kingCoo == null) {
 			return false;
 		}
@@ -310,26 +310,8 @@ public class BoardManager {
 		return false;
 	}
 
-	private Coordinate findKing(Color kingColor, Board kingsBoard) {
-		for (int x = 0; x < 8; x++) {
-			for (int y = 0; y < 8; y++) {
-				Coordinate c = new Coordinate(x, y);
-				Piece piece = kingsBoard.getPieceAt(c);
-				if (piece != null) {
-					if (piece.getType() == PieceType.KING && piece.getColor() == kingColor) {
-						return c;
-					}
-				}
-			}
-		}
-		return null;
-	}
-
-	private void initialValidation(Coordinate from, Coordinate to) throws InvalidMoveException {
-		if (!isCoordinateOnBoard(from)) {
-			throw new OutOfBoardException();
-		}
-		if (!isCoordinateOnBoard(to)) {
+	private void preValidate(Coordinate from, Coordinate to) throws InvalidMoveException {
+		if (!from.isOnBoard() || !to.isOnBoard()) {
 			throw new OutOfBoardException();
 		}
 		Piece piece = board.getPieceAt(from);
@@ -339,13 +321,6 @@ public class BoardManager {
 		if (piece.getColor() != calculateNextMoveColor()) {
 			throw new AnotherPlayerTurnException();
 		}
-	}
-
-	public boolean isCoordinateOnBoard(Coordinate c) {
-		if (c.getX() > 7 || c.getX() < 0 || c.getY() > 7 || c.getY() < 0) {
-			return false;
-		}
-		return true;
 	}
 
 	private Color calculateNextMoveColor() {

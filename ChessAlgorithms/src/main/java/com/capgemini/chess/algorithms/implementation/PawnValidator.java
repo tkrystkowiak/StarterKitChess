@@ -34,7 +34,7 @@ public class PawnValidator extends Validator {
 
 		if (piece.getColor() == Color.BLACK) {
 			Coordinate a = new Coordinate(pX, pY - 1);
-			if (isCoordinateOnBoard(a) && board.getPieceAt(a) == null) {
+			if (a.isOnBoard() && board.getPieceAt(a) == null) {
 				possibleMoves.add(a);
 				Coordinate b = new Coordinate(pX, pY - 2);
 				if (isFirstMove && board.getPieceAt(b) == null) {
@@ -42,17 +42,17 @@ public class PawnValidator extends Validator {
 				}
 			}
 			Coordinate c = new Coordinate(pX - 1, pY - 1);
-			if (isCoordinateOnBoard(c) && isOccupiedByEnemy(c)) {
+			if (c.isOnBoard() && board.isOccupiedByEnemy(c, piece)) {
 				possibleMoves.add(c);
 			}
 			Coordinate d = new Coordinate(pX + 1, pY - 1);
-			if (isCoordinateOnBoard(d) && isOccupiedByEnemy(d)) {
+			if (d.isOnBoard() && board.isOccupiedByEnemy(d, piece)) {
 				possibleMoves.add(d);
 			}
 		}
 		if (piece.getColor() == Color.WHITE) {
 			Coordinate a = new Coordinate(pX, pY + 1);
-			if (isCoordinateOnBoard(a) && board.getPieceAt(a) == null) {
+			if (a.isOnBoard() && board.getPieceAt(a) == null) {
 				possibleMoves.add(a);
 				Coordinate b = new Coordinate(pX, pY + 2);
 				if (isFirstMove && board.getPieceAt(b) == null) {
@@ -60,11 +60,11 @@ public class PawnValidator extends Validator {
 				}
 			}
 			Coordinate c = new Coordinate(pX - 1, pY + 1);
-			if (isCoordinateOnBoard(c) && isOccupiedByEnemy(c)) {
+			if (c.isOnBoard() && board.isOccupiedByEnemy(c, piece)) {
 				possibleMoves.add(c);
 			}
 			Coordinate d = new Coordinate(pX + 1, pY + 1);
-			if (isCoordinateOnBoard(d) && isOccupiedByEnemy(d)) {
+			if (d.isOnBoard() && board.isOccupiedByEnemy(d, piece)) {
 				possibleMoves.add(d);
 			}
 		}
@@ -112,10 +112,10 @@ public class PawnValidator extends Validator {
 		if (!isInRange(possibleMoves)) {
 			throw new OutOfPieceRangeException();
 		}
-		if (isOccupiedByOwn(next) || isOccupiedByEnemy(next) && pX == nX) {
+		if (board.isOccupiedByOwn(next, piece) || board.isOccupiedByEnemy(next, piece) && pX == nX) {
 			throw new OccupiedCoordinatesException();
 		}
-		if (isOccupiedByEnemy(next)) {
+		if (board.isOccupiedByEnemy(next, piece)) {
 			move.setType(MoveType.CAPTURE);
 			return true;
 		}

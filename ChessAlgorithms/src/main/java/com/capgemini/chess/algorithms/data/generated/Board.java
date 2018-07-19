@@ -6,7 +6,9 @@ import java.util.List;
 import com.capgemini.chess.algorithms.data.Coordinate;
 import com.capgemini.chess.algorithms.data.Move;
 import com.capgemini.chess.algorithms.data.enums.BoardState;
+import com.capgemini.chess.algorithms.data.enums.Color;
 import com.capgemini.chess.algorithms.data.enums.Piece;
+import com.capgemini.chess.algorithms.data.enums.PieceType;
 
 /**
  * Board representation. Board objects are generated based on move history.
@@ -52,6 +54,52 @@ public class Board {
 
 	public void setState(BoardState state) {
 		this.state = state;
+	}
+
+	public Coordinate findKing(Color kingColor) {
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				Coordinate c = new Coordinate(x, y);
+				Piece piece = getPieceAt(c);
+				if (piece != null) {
+					if (piece.getType() == PieceType.KING && piece.getColor() == kingColor) {
+						return c;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	public boolean isOccupied(Coordinate c) {
+		Piece p = getPieceAt(c);
+		if (p == null) {
+			return false;
+		}
+		return true;
+	}
+
+	public boolean isOccupiedByOwn(Coordinate c, Piece ownPiece) {
+		if (!isOccupied(c)) {
+			return false;
+		}
+		Piece p = getPieceAt(c);
+
+		if (p.getColor() == ownPiece.getColor()) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isOccupiedByEnemy(Coordinate c, Piece ownPiece) {
+		Piece p = getPieceAt(c);
+		if (!isOccupied(c)) {
+			return false;
+		}
+		if (p.getColor() == ownPiece.getColor()) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
